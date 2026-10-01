@@ -1,0 +1,63 @@
+@model Sipanda.Models.Entities.MasterRole
+@using Sipanda.Helpers
+@{
+    ViewData["Title"] = "Edit Master Role";
+    var allMenus = ViewData["AllMenus"] as Dictionary<string, string> ?? new();
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Edit Master Role & Hak Akses</h2>
+        <p class="page-subtitle">Perbarui nama role dan konfigurasi izin menu</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Kembali ke Daftar Role
+    </a>
+</div>
+
+<div class="card" style="max-width: 700px;">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="form-group">
+                <label asp-for="NamaRole" class="form-label"></label>
+                <input asp-for="NamaRole" class="form-control" />
+                <span asp-validation-for="NamaRole" style="color: var(--danger); font-size: 0.75rem;"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Deskripsi" class="form-label"></label>
+                <input asp-for="Deskripsi" class="form-control" />
+                <span asp-validation-for="Deskripsi" style="color: var(--danger); font-size: 0.75rem;"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" style="margin-bottom: 0.75rem;">
+                    <i class="bi bi-ui-checks"></i> Izin Akses Menu (Centang menu yang diperbolehkan):
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: #f8fafc; padding: 1.25rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    @foreach (var menu in allMenus)
+                    {
+                        bool isChecked = Model.HasMenu(menu.Key);
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input type="checkbox" name="selectedMenus" value="@menu.Key" id="menu_@menu.Key" checked="@isChecked" style="cursor: pointer;" />
+                            <label for="menu_@menu.Key" style="cursor: pointer; font-size: 0.85rem; font-weight: 500; color: #1e293b;">
+                                @menu.Value
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle-fill"></i> Simpan Perubahan
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>

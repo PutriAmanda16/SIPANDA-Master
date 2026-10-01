@@ -1,0 +1,626 @@
+@model Sipanda.Models.Entities.BudgetPendapatan
+@{
+    ViewData["Title"] = "Canvas Rincian Penghitungan - " + Model.NomorUsulan;
+    var activeVersi = ViewBag.ActiveVersi as Sipanda.Models.Entities.BudgetPendapatanVersi;
+    var allStages = ViewBag.AllStages as List<Sipanda.Models.Entities.MasterTahapBudgeting> ?? new List<Sipanda.Models.Entities.MasterTahapBudgeting>();
+    var items = activeVersi?.VersiDetailList.ToList() ?? new List<Sipanda.Models.Entities.BudgetPendapatanVersiDetail>();
+
+    long totalTarget = items.Sum(i => i.NilaiTarget);
+    long totalSemula = items.Sum(i => i.NilaiSemula);
+    long totalSelisih = totalTarget - totalSemula;
+    bool isPerubahan = Model.JenisAnggaran == "PERUBAHAN";
+    bool isLocked = Model.StatusDokumen == "DIAJUKAN" || Model.StatusDokumen == "FINAL";
+}
+
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <span class="badge @(Model.JenisAnggaran == "MURNI" ? "badge-success" : (Model.JenisAnggaran == "PERUBAHAN" ? "badge-warning" : "badge-info"))">
+                @Model.JenisAnggaran
+            </span>
+            <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                TA @Model.TahunAnggaran?.Tahun
+            </span>
+            <span class="badge badge-secondary">Versi @(activeVersi?.NomorVersi ?? "V1.0")</span>
+        </div>
+        <h2 class="page-title">@Model.NomorUsulan</h2>
+        <p class="page-subtitle"><i class="bi bi-building"></i> @Model.Skpd?.NamaSkpd</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a asp-action="PrintRkaDpa" asp-route-id="@Model.Id" target="_blank" class="btn btn-secondary">
+            <i class="bi bi-printer"></i> Format Cetak RKA / DPA
+        </a>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+    </div>
+}
+
+<!-- WORKFLOW STEPPER TIMELINE -->
+<div class="card" style="margin-bottom: 1.5rem; overflow-x: auto;">
+    <div class="card-body" style="padding: 1.25rem;">
+        <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">
+            <i class="bi bi-diagram-3"></i> Progres Tahapan Pembahasan (@allStages.Count Tahap)
+        </div>
+        <div style="display: flex; gap: 0.5rem; min-width: 800px; align-items: center;">
+            @for (int i = 0; i < allStages.Count; i++)
+            {
+                var stage = allStages[i];
+                bool isPast = stage.Urutan < Model.CurrentTahap?.Urutan;
+                bool isCurrent = stage.Id == Model.CurrentTahapId;
+
+                <div style="flex: 1; text-align: center; position: relative;">
+                    <div style="width: 28px; height: 28px; border-radius: 50%; margin: 0 auto 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
+                                background: @(isCurrent ? "#3b82f6" : (isPast ? "#10b981" : "var(--border)"));
+                                color: @(isCurrent || isPast ? "#fff" : "var(--text-muted)");">
+                        @(isPast ? "✓" : (i + 1).ToString())
+                    </div>
+                    <div style="font-size: 0.7rem; font-weight: @(isCurrent ? "700" : "500"); color: @(isCurrent ? "#3b82f6" : (isPast ? "var(--text-main)" : "var(--text-muted)")); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="@stage.NamaTahap">
+                        @stage.NamaTahap
+                    </div>
+                </div>
+                @if (i < allStages.Count - 1)
+                {
+                    <div style="height: 2px; flex: 0.5; background: @(isPast ? "#10b981" : "var(--border)");"></div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- DOKUMEN INFO & SUMMARY KPI CARDS -->
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+    <!-- INFORMASI KEGIATAN -->
+    <div class="card">
+        <div class="card-body">
+            <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-main);">
+                <i class="bi bi-info-circle"></i> Informasi Urusan & Sub Kegiatan
+            </h4>
+            <table style="font-size: 0.85rem; width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="width: 140px; color: var(--text-muted); padding: 0.25rem 0;">Program</td>
+                    <td style="font-weight: 600;">: @(Model.Program ?? "-")</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); padding: 0.25rem 0;">Kegiatan</td>
+                    <td style="font-weight: 600;">: @(Model.Kegiatan ?? "-")</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); padding: 0.25rem 0;">Sub Kegiatan</td>
+                    <td style="font-weight: 600;">: @(Model.SubKegiatan ?? "-")</td>
+                </tr>
+                <tr>
+                    <td style="color: var(--text-muted); padding: 0.25rem 0;">Tahap Aktif</td>
+                    <td>: <span class="badge badge-primary">@Model.CurrentTahap?.NamaTahap</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- TARGET SUMMARY -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(59, 130, 246, 0.2);">
+        <div class="card-body" style="display: flex; flex-direction: column; justify-content: center;">
+            @if (isPerubahan)
+            {
+                <div style="font-size: 0.75rem; color: var(--text-muted);">SEMULA (DPA MURNI)</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">
+                    Rp @totalSemula.ToString("N0")
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">MENJADI (USULAN PAK)</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: #10b981; margin-bottom: 0.5rem;">
+                    Rp @totalTarget.ToString("N0")
+                </div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: @(totalSelisih >= 0 ? "#10b981" : "#ef4444");">
+                    <i class="bi bi-arrow-up-right"></i> Selisih: @(totalSelisih >= 0 ? "+" : "")Rp @totalSelisih.ToString("N0")
+                </div>
+            }
+            else
+            {
+                <div style="font-size: 0.75rem; color: var(--text-muted);">TOTAL TARGET PENDAPATAN MURNI</div>
+                <div style="font-size: 1.6rem; font-weight: 800; color: #10b981; margin: 0.25rem 0;">
+                    Rp @totalTarget.ToString("N0")
+                </div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">
+                    <i class="bi bi-list-check"></i> Terdiri dari @items.Count rincian komponen
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- WORKFLOW & APPROVAL ACTION BAR -->
+<div class="card" style="margin-bottom: 1.5rem; background: var(--surface);">
+    <div class="card-body" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Status Dokumen: </span>
+            <span class="badge @(Model.StatusDokumen == "DRAFT" ? "badge-secondary" : (Model.StatusDokumen == "DIAJUKAN" ? "badge-warning" : (Model.StatusDokumen == "DISETUJUI" ? "badge-success" : (Model.StatusDokumen == "DIKEMBALIKAN" ? "badge-danger" : "badge-primary"))))">
+                @Model.StatusDokumen
+            </span>
+            @if (isLocked)
+            {
+                <span style="font-size: 0.75rem; color: var(--text-muted); margin-left: 0.5rem;">
+                    <i class="bi bi-lock-fill"></i> Data terkunci selama proses verifikasi
+                </span>
+            }
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+            @if (Model.StatusDokumen == "DRAFT" || Model.StatusDokumen == "DIKEMBALIKAN")
+            {
+                <button type="button" class="btn btn-secondary" onclick="openAddModal()">
+                    <i class="bi bi-plus-circle"></i> Tambah Rincian Layanan
+                </button>
+
+                <form asp-action="SubmitApproval" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="budgetId" value="@Model.Id" />
+                    <button type="submit" class="btn btn-primary" onclick="return confirm('Ajukan dokumen ini untuk verifikasi tahapan selanjutnya?')">
+                        <i class="bi bi-send-fill"></i> Ajukan Persetujuan
+                    </button>
+                </form>
+            }
+            else if (Model.StatusDokumen == "DIAJUKAN")
+            {
+                <!-- Action for Approvers (TAPD / Admin) -->
+                <button type="button" class="btn btn-danger" onclick="openApprovalModal('RETURN')">
+                    <i class="bi bi-arrow-counterclockwise"></i> Kembalikan untuk Revisi
+                </button>
+                <button type="button" class="btn btn-success" onclick="openApprovalModal('APPROVE')">
+                    <i class="bi bi-check-all"></i> Setujui & Lanjut Tahap Berikutnya
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- CANVAS RINCIAN PENGHITUNGAN TABLE -->
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;">
+        <h3 style="font-size: 1rem; font-weight: 700; margin: 0;">
+            <i class="bi bi-calculator-fill"></i> Rincian Penghitungan Target Pendapatan Daerah
+        </h3>
+        @if (!isLocked)
+        {
+            <button type="button" class="btn btn-sm btn-primary" onclick="openAddModal()">
+                <i class="bi bi-plus"></i> Tambah Objek / Tarif
+            </button>
+        }
+    </div>
+
+    <div class="card-body" style="padding: 0;">
+        <div style="overflow-x: auto;">
+            <table class="table" style="margin-bottom: 0;">
+                @if (isPerubahan)
+                {
+                    <thead>
+                        <tr style="background: var(--surface);">
+                            <th rowspan="2" style="width: 40px; text-align: center; vertical-align: middle;">#</th>
+                            <th rowspan="2" style="vertical-align: middle;">Kode Rekening & Uraian Komponen</th>
+                            <th colspan="4" style="text-align: center; background: rgba(59, 130, 246, 0.05); border-left: 1px solid var(--border);">SEBELUM PERUBAHAN (SEMULA)</th>
+                            <th colspan="4" style="text-align: center; background: rgba(16, 185, 129, 0.05); border-left: 1px solid var(--border);">SETELAH PERUBAHAN (MENJADI)</th>
+                            <th rowspan="2" style="text-align: right; vertical-align: middle; border-left: 1px solid var(--border);">BERTAMBAH / (BERKURANG) (RP)</th>
+                            <th rowspan="2" style="text-align: center; width: 90px; vertical-align: middle;">AKSI</th>
+                        </tr>
+                        <tr style="font-size: 0.75rem;">
+                            <th style="text-align: right; border-left: 1px solid var(--border);">Vol</th>
+                            <th>Satuan</th>
+                            <th style="text-align: right;">Tarif Satuan</th>
+                            <th style="text-align: right;">Jumlah (Rp)</th>
+
+                            <th style="text-align: right; border-left: 1px solid var(--border);">Vol</th>
+                            <th>Satuan</th>
+                            <th style="text-align: right;">Tarif Satuan</th>
+                            <th style="text-align: right;">Jumlah (Rp)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!items.Any())
+                        {
+                            <tr>
+                                <td colspan="12" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                                    Belum ada rincian penghitungan target. Klik <strong>Tambah Objek / Tarif</strong> untuk memasukkan layanan.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            int no = 1;
+                            foreach (var item in items)
+                            {
+                                <tr>
+                                    <td style="text-align: center;">@no</td>
+                                    <td>
+                                        <div style="font-weight: 600; color: var(--text-main);">@item.UraianLayanan</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                            @item.Detail?.Rekening?.KodeRekening • @item.Detail?.Rekening?.NamaRekening
+                                        </div>
+                                    </td>
+                                    <!-- SEMULA -->
+                                    <td style="text-align: right; border-left: 1px solid var(--border);">@item.VolumeSemula.ToString("N0")</td>
+                                    <td>@item.Satuan</td>
+                                    <td style="text-align: right;">Rp @item.TarifSemula.ToString("N0")</td>
+                                    <td style="text-align: right; font-weight: 600;">Rp @item.NilaiSemula.ToString("N0")</td>
+
+                                    <!-- MENJADI -->
+                                    <td style="text-align: right; border-left: 1px solid var(--border); font-weight: 700; color: #10b981;">@item.Volume.ToString("N0")</td>
+                                    <td>@item.Satuan</td>
+                                    <td style="text-align: right;">Rp @item.TarifSatuan.ToString("N0")</td>
+                                    <td style="text-align: right; font-weight: 700; color: #10b981;">Rp @item.NilaiTarget.ToString("N0")</td>
+
+                                    <!-- SELISIH -->
+                                    <td style="text-align: right; font-weight: 700; border-left: 1px solid var(--border); color: @(item.SelisihNilai >= 0 ? "#10b981" : "#ef4444");">
+                                        @(item.SelisihNilai >= 0 ? "+" : "")Rp @item.SelisihNilai.ToString("N0")
+                                    </td>
+
+                                    <td style="text-align: center;">
+                                        @if (!isLocked)
+                                        {
+                                            <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="openEditModal(@item.Id, @item.Volume, @item.TarifSatuan, '@item.Keterangan')" title="Edit Target">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form asp-action="DeleteItem" method="post" style="display: inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="versiDetailId" value="@item.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Hapus item ini?')" title="Hapus">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                                no++;
+                            }
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr style="font-weight: 800; background: var(--surface);">
+                            <td colspan="5" style="text-align: right;">TOTAL SEBELUM (SEMULA):</td>
+                            <td style="text-align: right;">Rp @totalSemula.ToString("N0")</td>
+                            <td colspan="3" style="text-align: right;">TOTAL SETELAH (MENJADI):</td>
+                            <td style="text-align: right; color: #10b981;">Rp @totalTarget.ToString("N0")</td>
+                            <td style="text-align: right; color: @(totalSelisih >= 0 ? "#10b981" : "#ef4444");">
+                                @(totalSelisih >= 0 ? "+" : "")Rp @totalSelisih.ToString("N0")
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
+                }
+                else
+                {
+                    <!-- FORMAT APBD MURNI -->
+                    <thead>
+                        <tr style="background: var(--surface);">
+                            <th style="width: 40px; text-align: center;">#</th>
+                            <th>Kode Rekening & Uraian Komponen</th>
+                            <th style="text-align: right; width: 100px;">Volume</th>
+                            <th style="width: 90px;">Satuan</th>
+                            <th style="text-align: right; width: 140px;">Tarif Satuan (Perda 7)</th>
+                            <th style="text-align: right; width: 160px;">Jumlah Target (Rp)</th>
+                            <th>Keterangan / Dasar</th>
+                            <th style="text-align: center; width: 90px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!items.Any())
+                        {
+                            <tr>
+                                <td colspan="8" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+                                    Belum ada rincian penghitungan target. Klik <strong>Tambah Objek / Tarif</strong> untuk memasukkan layanan.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            int no = 1;
+                            foreach (var item in items)
+                            {
+                                <tr>
+                                    <td style="text-align: center;">@no</td>
+                                    <td>
+                                        <div style="font-weight: 600; color: var(--text-main);">@item.UraianLayanan</div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                            @item.Detail?.Rekening?.KodeRekening • @item.Detail?.Rekening?.NamaRekening
+                                        </div>
+                                    </td>
+                                    <td style="text-align: right; font-weight: 700;">@item.Volume.ToString("N0")</td>
+                                    <td><span class="badge badge-secondary">@item.Satuan</span></td>
+                                    <td style="text-align: right;">Rp @item.TarifSatuan.ToString("N0")</td>
+                                    <td style="text-align: right; font-weight: 700; color: #10b981;">Rp @item.NilaiTarget.ToString("N0")</td>
+                                    <td style="font-size: 0.8rem; color: var(--text-muted);">@(item.Keterangan ?? "-")</td>
+                                    <td style="text-align: center;">
+                                        @if (!isLocked)
+                                        {
+                                            <div style="display: flex; gap: 0.25rem; justify-content: center;">
+                                                <button type="button" class="btn btn-sm btn-secondary" onclick="openEditModal(@item.Id, @item.Volume, @item.TarifSatuan, '@item.Keterangan')" title="Edit Target">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <form asp-action="DeleteItem" method="post" style="display: inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="versiDetailId" value="@item.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Hapus item ini?')" title="Hapus">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                                no++;
+                            }
+                        }
+                    </tbody>
+                    <tfoot>
+                        <tr style="font-weight: 800; background: var(--surface);">
+                            <td colspan="5" style="text-align: right;">TOTAL TARGET PENDAPATAN (MURNI):</td>
+                            <td style="text-align: right; color: #10b981; font-size: 1.1rem;">Rp @totalTarget.ToString("N0")</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
+                }
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: TAMBAH RINCIAN LAYANAN (DENGAN AUTOCOMPLETE PERDA 7) -->
+<div id="modalAddItem" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="card" style="width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto; margin: 1rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="font-size: 1rem; font-weight: 700; margin: 0;">Tambah Rincian Penghitungan Objek / Tarif</h4>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="closeAddModal()">&times;</button>
+        </div>
+        <div class="card-body">
+            <!-- PENCARIAN KATALOG TARIF PERDA 7 -->
+            <div class="form-group" style="background: rgba(59, 130, 246, 0.05); padding: 0.75rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+                <label class="form-label" style="color: #3b82f6; font-weight: 700;">
+                    <i class="bi bi-search"></i> Cari dari 4.460 Tarif Retribusi Perda No. 7/2023
+                </label>
+                <input type="text" id="inputSearchTarif" class="form-control" placeholder="Ketik nama tindakan / layanan / labkesda..." oninput="doSearchTarif(this.value)" />
+                <div id="searchTarifResults" style="display: none; max-height: 180px; overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-top: 0.5rem;"></div>
+            </div>
+
+            <form asp-action="AddItem" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="budgetId" value="@Model.Id" />
+                <input type="hidden" name="tarifRetribusiId" id="addTarifRetribusiId" />
+
+                <div class="form-group">
+                    <label class="form-label">Kode Rekening Pendapatan</label>
+                    <select name="rekeningId" id="addRekeningId" class="form-control" asp-items="ViewBag.RekeningList"></select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Uraian Komponen / Tindakan</label>
+                    <input type="text" name="uraianLayanan" id="addUraianLayanan" class="form-control" required />
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;">
+                    <div class="form-group">
+                        <label class="form-label">Estimasi Volume</label>
+                        <input type="number" step="any" name="volume" id="addVolume" class="form-control" value="1" required oninput="calcAddTotal()" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Satuan</label>
+                        <input type="text" name="satuan" id="addSatuan" class="form-control" value="Layanan" required />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tarif Satuan (Rp)</label>
+                        <input type="number" name="tarifSatuan" id="addTarifSatuan" class="form-control" required oninput="calcAddTotal()" />
+                    </div>
+                </div>
+
+                @if (isPerubahan)
+                {
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; background: rgba(245, 158, 11, 0.05); padding: 0.75rem; border-radius: 6px; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 0.75rem;">Volume Semula (DPA)</label>
+                            <input type="number" step="any" name="volumeSemula" class="form-control" value="0" />
+                        </div>
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label" style="font-size: 0.75rem;">Tarif Semula (Rp)</label>
+                            <input type="number" name="tarifSemula" class="form-control" value="0" />
+                        </div>
+                    </div>
+                }
+
+                <div class="form-group">
+                    <label class="form-label">Total Target Dihitung (Rp)</label>
+                    <div id="addTotalPreview" style="font-size: 1.2rem; font-weight: 800; color: #10b981;">Rp 0</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Keterangan / Dasar Perhitungan</label>
+                    <input type="text" name="keterangan" class="form-control" placeholder="Contoh: Berdasarkan tren kunjungan semester I" />
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Tambahkan ke Dokumen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: EDIT ITEM -->
+<div id="modalEditItem" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="card" style="width: 100%; max-width: 500px; margin: 1rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="font-size: 1rem; font-weight: 700; margin: 0;">Edit Target Komponen</h4>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="closeEditModal()">&times;</button>
+        </div>
+        <div class="card-body">
+            <form asp-action="UpdateItem" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="versiDetailId" id="editVersiDetailId" />
+
+                <div class="form-group">
+                    <label class="form-label">Volume Target Baru</label>
+                    <input type="number" step="any" name="volume" id="editVolume" class="form-control" required oninput="calcEditTotal()" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tarif Satuan (Rp)</label>
+                    <input type="number" name="tarifSatuan" id="editTarifSatuan" class="form-control" required oninput="calcEditTotal()" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Total Baru (Rp)</label>
+                    <div id="editTotalPreview" style="font-size: 1.2rem; font-weight: 800; color: #10b981;">Rp 0</div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Keterangan / Alasan Penyesuaian</label>
+                    <input type="text" name="keterangan" id="editKeterangan" class="form-control" />
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Batal</button>
+                    <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: APPROVAL / RETURN -->
+<div id="modalApproval" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="card" style="width: 100%; max-width: 500px; margin: 1rem;">
+        <div class="card-header">
+            <h4 id="approvalModalTitle" style="font-size: 1rem; font-weight: 700; margin: 0;">Verifikasi Tahapan</h4>
+        </div>
+        <div class="card-body">
+            <form asp-action="ProcessApproval" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="budgetId" value="@Model.Id" />
+                <input type="hidden" name="actionType" id="approvalActionType" />
+
+                <div class="form-group">
+                    <label class="form-label">Catatan Hasil Pembahasan / Alasan</label>
+                    <textarea name="catatan" class="form-control" rows="3" placeholder="Masukkan catatan resmi tahapan ini..." required></textarea>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeApprovalModal()">Batal</button>
+                    <button type="submit" id="approvalSubmitBtn" class="btn btn-primary">Konfirmasi</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openAddModal() {
+        document.getElementById('modalAddItem').style.display = 'flex';
+        calcAddTotal();
+    }
+    function closeAddModal() {
+        document.getElementById('modalAddItem').style.display = 'none';
+    }
+
+    function openEditModal(id, vol, tarif, ket) {
+        document.getElementById('editVersiDetailId').value = id;
+        document.getElementById('editVolume').value = vol;
+        document.getElementById('editTarifSatuan').value = tarif;
+        document.getElementById('editKeterangan').value = ket || '';
+        document.getElementById('modalEditItem').style.display = 'flex';
+        calcEditTotal();
+    }
+    function closeEditModal() {
+        document.getElementById('modalEditItem').style.display = 'none';
+    }
+
+    function openApprovalModal(action) {
+        document.getElementById('approvalActionType').value = action;
+        var title = document.getElementById('approvalModalTitle');
+        var btn = document.getElementById('approvalSubmitBtn');
+
+        if (action === 'APPROVE') {
+            title.innerText = 'Persetujuan & Lanjut ke Tahapan Berikutnya';
+            btn.className = 'btn btn-success';
+            btn.innerText = 'Setujui & Lanjut Tahap';
+        } else {
+            title.innerText = 'Kembalikan Dokumen ke OPD (Revisi)';
+            btn.className = 'btn btn-danger';
+            btn.innerText = 'Kembalikan Dokumen';
+        }
+        document.getElementById('modalApproval').style.display = 'flex';
+    }
+    function closeApprovalModal() {
+        document.getElementById('modalApproval').style.display = 'none';
+    }
+
+    function calcAddTotal() {
+        var vol = parseFloat(document.getElementById('addVolume').value) || 0;
+        var tarif = parseFloat(document.getElementById('addTarifSatuan').value) || 0;
+        var total = vol * tarif;
+        document.getElementById('addTotalPreview').innerText = 'Rp ' + total.toLocaleString('id-ID');
+    }
+
+    function calcEditTotal() {
+        var vol = parseFloat(document.getElementById('editVolume').value) || 0;
+        var tarif = parseFloat(document.getElementById('editTarifSatuan').value) || 0;
+        var total = vol * tarif;
+        document.getElementById('editTotalPreview').innerText = 'Rp ' + total.toLocaleString('id-ID');
+    }
+
+    var searchTimer = null;
+    function doSearchTarif(kw) {
+        clearTimeout(searchTimer);
+        var container = document.getElementById('searchTarifResults');
+        if (!kw || kw.length < 2) {
+            container.style.display = 'none';
+            return;
+        }
+        searchTimer = setTimeout(function() {
+            fetch('/BudgetPendapatan/SearchTarif?keyword=' + encodeURIComponent(kw))
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        var html = '';
+                        data.forEach(item => {
+                            html += `<div style="padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); cursor: pointer;" onclick='selectTarif(${JSON.stringify(item)})'>
+                                <div style="font-weight: 600; font-size: 0.85rem;">${item.komponen}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                                    <span>${item.faskes} • ${item.kategori}</span>
+                                    <span style="font-weight: 700; color: #10b981;">Rp ${item.harga.toLocaleString('id-ID')} / ${item.satuan}</span>
+                                </div>
+                            </div>`;
+                        });
+                        container.innerHTML = html;
+                        container.style.display = 'block';
+                    } else {
+                        container.innerHTML = '<div style="padding: 0.75rem; font-size: 0.8rem; color: var(--text-muted);">Tidak ditemukan tarif yang cocok.</div>';
+                        container.style.display = 'block';
+                    }
+                });
+        }, 300);
+    }
+
+    function selectTarif(item) {
+        document.getElementById('addTarifRetribusiId').value = item.id;
+        document.getElementById('addUraianLayanan').value = item.komponen;
+        document.getElementById('addSatuan').value = item.satuan || 'Layanan';
+        document.getElementById('addTarifSatuan').value = item.harga;
+        document.getElementById('searchTarifResults').style.display = 'none';
+        document.getElementById('inputSearchTarif').value = '';
+        calcAddTotal();
+    }
+</script>
