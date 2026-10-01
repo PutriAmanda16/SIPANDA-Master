@@ -1,0 +1,169 @@
+@model Sipanda.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard Publik";
+}
+
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Dashboard Retribusi Pelayanan Kesehatan</h2>
+        <p class="page-subtitle">Portal Informasi Tarif Retribusi Resmi Berdasarkan Perda Kota Surabaya No. 7 Tahun 2023</p>
+    </div>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-controller="TarifRetribusi" asp-action="Index" class="btn btn-primary">
+            <i class="bi bi-receipt"></i> Kelola Tabel Retribusi
+        </a>
+    }
+    else
+    {
+        <a asp-controller="Account" asp-action="Login" class="btn btn-primary">
+            <i class="bi bi-box-arrow-in-right"></i> Login Petugas / Admin
+        </a>
+    }
+</div>
+
+<!-- KPI Cards Grid -->
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-icon primary">
+            <i class="bi bi-receipt"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">@Model.TotalTarifAktif.ToString("N0")</div>
+            <div class="stat-label">Item Tarif Aktif</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon accent">
+            <i class="bi bi-hospital"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">@Model.TotalFaskes</div>
+            <div class="stat-label">Fasilitas Kesehatan</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon warning">
+            <i class="bi bi-diagram-3"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">@Model.TotalKategoriInduk <span style="font-size: 0.9rem; font-weight: normal; color: #64748b;">(@Model.TotalSubKategori Sub)</span></div>
+            <div class="stat-label">Kategori Layanan</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon dark">
+            <i class="bi bi-building"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">@Model.TotalSkpd</div>
+            <div class="stat-label">SKPD / OPD Pemkot</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon dark">
+            <i class="bi bi-journal-bookmark-fill"></i>
+        </div>
+        <div class="stat-info">
+            <div class="stat-value">@Model.TotalPeraturan</div>
+            <div class="stat-label">Dasar Regulasi</div>
+        </div>
+    </div>
+</div>
+
+<!-- Grid 2 Kolom: Statistik per Faskes & Regulasi -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Card Statistik Faskes -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="bi bi-pie-chart-fill" style="color: var(--primary);"></i> Cakupan Retribusi per Faskes</h3>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <div class="table-responsive">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Faskes</th>
+                            <th>Kode Rekening</th>
+                            <th>Jumlah Tarif</th>
+                            <th>Tarif Terendah</th>
+                            <th>Tarif Tertinggi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.FaskesStats)
+                        {
+                            <tr>
+                                <td>
+                                    <div style="font-weight: 700; color: #0f172a;">@item.NamaFaskes</div>
+                                    <small style="color: #64748b; font-family: monospace;">@item.KodeFaskes</small>
+                                </td>
+                                <td><span class="badge badge-secondary">@item.KodeRekening</span></td>
+                                <td><strong style="color: var(--primary);">@item.TotalTarif.ToString("N0")</strong> item</td>
+                                <td class="text-currency">Rp @item.MinTarif.ToString("N0")</td>
+                                <td class="text-currency" style="color: var(--accent); font-weight: 700;">Rp @item.MaxTarif.ToString("N0")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Dasar Hukum Regulasi -->
+    <div class="card" style="margin-bottom: 0;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="bi bi-shield-shaded" style="color: var(--accent);"></i> Dasar Regulasi & Peraturan</h3>
+        </div>
+        <div class="card-body">
+            @foreach (var per in Model.PeraturanList)
+            {
+                <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); margin-bottom: 1rem; background: #fafafa;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h4 style="font-size: 1rem; font-weight: 700; color: #0f172a;">@per.JudulLengkap</h4>
+                        <span class="badge badge-success">@per.Status</span>
+                    </div>
+                    <p style="font-size: 0.85rem; color: #475569; margin-bottom: 0.5rem; line-height: 1.4;">@per.Tentang</p>
+                    <div style="font-size: 0.75rem; color: #94a3b8;">
+                        <i class="bi bi-calendar-event"></i> Berlaku mulai: <strong>@per.TanggalBerlaku.ToString("dd MMMM yyyy")</strong>
+                    </div>
+                </div>
+            }
+
+            <div style="background: #e0f2fe; padding: 1rem; border-radius: var(--radius-sm); font-size: 0.82rem; color: #0369a1;">
+                <i class="bi bi-info-circle-fill"></i> Seluruh penetapan tarif retribusi pelayanan kesehatan Puskesmas, Labkesda, RSUD, dan BDRS telah disesuaikan dengan regulasi yang berlaku.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Kategori Layanan Populer -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title"><i class="bi bi-grid-3x3-gap-fill" style="color: var(--warning);"></i> Ringkasan Kelompok Kategori Layanan</h3>
+    </div>
+    <div class="card-body">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            @foreach (var kat in Model.KategoriStats)
+            {
+                <div style="border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; background: #ffffff; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <span style="width: 10px; height: 10px; border-radius: 50%; background: var(--primary);"></span>
+                            <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b;">@kat.NamaKategori</h4>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed var(--border-color);">
+                        <span style="font-size: 0.8rem; color: #64748b;">@kat.JumlahTarif Item Tarif Terdaftar</span>
+                        <span class="badge badge-secondary">@kat.JumlahKomponen Layanan</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

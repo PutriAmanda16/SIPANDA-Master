@@ -1,0 +1,74 @@
+@model Sipanda.Models.Entities.MasterPeraturan
+@{
+    ViewData["Title"] = "Tambah Regulasi / Peraturan";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Tambah Regulasi / Peraturan</h2>
+        <p class="page-subtitle">Masukkan data dasar hukum penetapan tarif retribusi</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+    </a>
+</div>
+
+<div class="card" style="max-width: 650px;">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label asp-for="JenisPeraturan" class="form-label"></label>
+                    <input asp-for="JenisPeraturan" class="form-control" placeholder="Perda / Perwali / SK" />
+                    <span asp-validation-for="JenisPeraturan" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Nomor" class="form-label"></label>
+                    <input asp-for="Nomor" class="form-control" placeholder="Contoh: 7" />
+                    <span asp-validation-for="Nomor" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Tahun" class="form-label"></label>
+                    <input asp-for="Tahun" class="form-control" placeholder="2023" />
+                    <span asp-validation-for="Tahun" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Tentang" class="form-label"></label>
+                <textarea asp-for="Tentang" class="form-control" rows="3" placeholder="Contoh: Pajak Daerah dan Retribusi Daerah"></textarea>
+                <span asp-validation-for="Tentang" style="color: var(--danger); font-size: 0.75rem;"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label asp-for="TanggalBerlaku" class="form-label"></label>
+                    <input asp-for="TanggalBerlaku" type="date" class="form-control" />
+                    <span asp-validation-for="TanggalBerlaku" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Status" class="form-label"></label>
+                    <select asp-for="Status" class="form-select">
+                        <option value="aktif">aktif</option>
+                        <option value="tidak aktif">tidak aktif</option>
+                        <option value="dicabut">dicabut</option>
+                    </select>
+                    <span asp-validation-for="Status" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle-fill"></i> Simpan Peraturan
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>

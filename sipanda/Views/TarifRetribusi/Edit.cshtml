@@ -1,0 +1,109 @@
+@model Sipanda.Models.Entities.TarifRetribusi
+@{
+    ViewData["Title"] = "Edit Tarif Retribusi";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Edit Tarif Retribusi</h2>
+        <p class="page-subtitle">Perbarui besaran harga, masa berlaku, dan status tarif</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+    </a>
+</div>
+
+<div class="card" style="max-width: 750px;">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label asp-for="PeraturanId" class="form-label"></label>
+                    <select asp-for="PeraturanId" class="form-select" asp-items="ViewBag.PeraturanId"></select>
+                    <span asp-validation-for="PeraturanId" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="FaskesId" class="form-label"></label>
+                    <select asp-for="FaskesId" class="form-select" asp-items="ViewBag.FaskesId"></select>
+                    <span asp-validation-for="FaskesId" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="KategoriId" class="form-label"></label>
+                <select asp-for="KategoriId" class="form-select" id="selectKategori" asp-items="ViewBag.KategoriId" onchange="onKategoriChanged()"></select>
+                <span asp-validation-for="KategoriId" style="color: var(--danger); font-size: 0.75rem;"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="KomponenId" class="form-label"></label>
+                <select asp-for="KomponenId" class="form-select" id="selectKomponen" asp-items="ViewBag.KomponenId"></select>
+                <span asp-validation-for="KomponenId" style="color: var(--danger); font-size: 0.75rem;"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label asp-for="Harga" class="form-label"></label>
+                    <input asp-for="Harga" type="number" class="form-control" />
+                    <span asp-validation-for="Harga" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="TanggalMulai" class="form-label"></label>
+                    <input asp-for="TanggalMulai" type="date" class="form-control" />
+                    <span asp-validation-for="TanggalMulai" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Status" class="form-label"></label>
+                    <select asp-for="Status" class="form-select">
+                        <option value="aktif">aktif</option>
+                        <option value="tidak aktif">tidak aktif</option>
+                    </select>
+                    <span asp-validation-for="Status" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle-fill"></i> Simpan Perubahan
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    async function onKategoriChanged() {
+        const katId = document.getElementById('selectKategori').value;
+        const compSelect = document.getElementById('selectKomponen');
+        compSelect.innerHTML = '<option value="">-- Memuat layanan... --</option>';
+
+        if (!katId) {
+            compSelect.innerHTML = '<option value="">-- Pilih Kategori terlebih dahulu --</option>';
+            return;
+        }
+
+        try {
+            const resp = await fetch(`/TarifRetribusi/GetKomponenByKategori?kategoriId=${katId}`);
+            const data = await resp.json();
+            compSelect.innerHTML = '<option value="">-- Pilih Layanan / Tindakan --</option>';
+            data.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.innerText = item.namaKomponen + (item.satuan ? ` (${item.satuan})` : '');
+                compSelect.appendChild(opt);
+            });
+        } catch (e) {
+            console.error(e);
+        }
+    }
+</script>
+}

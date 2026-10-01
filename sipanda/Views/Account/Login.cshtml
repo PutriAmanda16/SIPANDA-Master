@@ -1,0 +1,58 @@
+@model Sipanda.Models.ViewModels.LoginViewModel
+@{
+    ViewData["Title"] = "Login Petugas / Administrator";
+}
+
+<div style="max-width: 440px; margin: 3rem auto;">
+    <div class="card" style="box-shadow: var(--shadow-lg); border-radius: var(--radius-lg);">
+        <div class="card-header" style="background: linear-gradient(135deg, #0f172a, #1e293b); color: white; padding: 2rem 1.5rem; text-align: center; display: block;">
+            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #0284c7, #38bdf8); border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; font-size: 1.75rem; margin-bottom: 0.75rem; color: white;">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <h2 style="font-size: 1.35rem; font-weight: 800; color: white; margin-bottom: 0.25rem;">Autentikasi Petugas</h2>
+            <p style="font-size: 0.8rem; color: #94a3b8;">Akses Pengelolaan Master Data & Tarif Retribusi</p>
+        </div>
+
+        <div class="card-body" style="padding: 2rem;">
+            <form asp-controller="Account" asp-action="Login" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ReturnUrl" />
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger" style="margin-bottom: 1.25rem;"></div>
+
+                <div class="form-group">
+                    <label asp-for="Username" class="form-label"><i class="bi bi-person-fill"></i> Username</label>
+                    <input asp-for="Username" class="form-control" placeholder="Masukkan username" autofocus />
+                    <span asp-validation-for="Username" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Password" class="form-label"><i class="bi bi-key-fill"></i> Password</label>
+                    <input asp-for="Password" class="form-control" placeholder="Masukkan password" />
+                    <span asp-validation-for="Password" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group" style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input asp-for="RememberMe" type="checkbox" id="chkRemember" style="cursor: pointer;" />
+                    <label for="chkRemember" style="font-size: 0.85rem; color: #475569; cursor: pointer;">Ingat sesi login saya</label>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; margin-top: 0.5rem;">
+                    <i class="bi bi-box-arrow-in-right"></i> Masuk ke Dashboard Admin
+                </button>
+            </form>
+
+            <div style="margin-top: 1.5rem; padding: 0.85rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.78rem; color: #64748b;">
+                <div style="font-weight: 700; color: #0f172a; margin-bottom: 0.35rem;">
+                    <i class="bi bi-info-circle-fill" style="color: var(--primary);"></i> Akun Login Berdasarkan Role:
+                </div>
+                <div style="line-height: 1.5;">
+                    <div>&bull; <strong>SuperAdmin</strong> (Semua Menu + User/Role): <code>superadmin</code> / <code>superadmin123</code></div>
+                    <div>&bull; <strong>Admin Retribusi</strong> (Tarif & Master Layanan): <code>admin</code> / <code>admin123</code></div>
+                    <div>&bull; <strong>Operator Faskes</strong> (Tabel Retribusi): <code>operator</code> / <code>operator123</code></div>
+                    <div>&bull; <strong>Auditor / Viewer</strong> (Dashboard Saja): <code>auditor</code> / <code>auditor123</code></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

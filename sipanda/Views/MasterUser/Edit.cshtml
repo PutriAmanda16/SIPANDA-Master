@@ -1,0 +1,90 @@
+@model Sipanda.Models.Entities.MasterUser
+@{
+    ViewData["Title"] = "Edit Master User";
+}
+
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Edit Master User</h2>
+        <p class="page-subtitle">Perbarui profil, role, atau reset password pengguna</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Kembali ke Daftar
+    </a>
+</div>
+
+<div class="card" style="max-width: 650px;">
+    <div class="card-body">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label asp-for="Username" class="form-label"></label>
+                    <input asp-for="Username" class="form-control" />
+                    <span asp-validation-for="Username" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="PasswordHash" class="form-label">Password</label>
+                    <input asp-for="PasswordHash" type="password" class="form-control" />
+                    <span asp-validation-for="PasswordHash" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="NamaLengkap" class="form-label"></label>
+                <input asp-for="NamaLengkap" class="form-control" />
+                <span asp-validation-for="NamaLengkap" style="color: var(--danger); font-size: 0.75rem;"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" type="email" class="form-control" />
+                    <span asp-validation-for="Email" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="RoleId" class="form-label"></label>
+                    <select asp-for="RoleId" class="form-select" asp-items="ViewBag.RoleId"></select>
+                    <span asp-validation-for="RoleId" style="color: var(--danger); font-size: 0.75rem;"></span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="form-group">
+                    <label asp-for="FaskesId" class="form-label"></label>
+                    <select asp-for="FaskesId" class="form-select" asp-items="ViewBag.FaskesId">
+                        <option value="">-- Semua / Tanpa Faskes Khusus --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="SkpdId" class="form-label"></label>
+                    <select asp-for="SkpdId" class="form-select" asp-items="ViewBag.SkpdId">
+                        <option value="">-- Tanpa SKPD Khusus --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-select">
+                    <option value="aktif">aktif</option>
+                    <option value="tidak aktif">tidak aktif</option>
+                </select>
+                <span asp-validation-for="Status" style="color: var(--danger); font-size: 0.75rem;"></span>
+            </div>
+
+            <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle-fill"></i> Simpan Perubahan
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
